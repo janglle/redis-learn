@@ -1,9 +1,9 @@
 package com.mogoroom.redis;
 
 import org.junit.Before;
-import org.junit.Test;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Tuple;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,10 +55,45 @@ public class Chapter02 {
         }
     }
 
-    @Test
-    public void tt() {
-        String s = "sh.h5.sdk";
-        System.out.println(s.substring("sh.".length()));
+    public void addToCart(String session, String item, int count) {
+        if (count <= 0) {
+            jedis.hdel("cart:" + session, item);
+        } else {
+            jedis.hset("cart:" + session, item, String.valueOf(count));
+        }
     }
 
+    public void cleanFullSessions() throws InterruptedException {
+        while (!quite) {
+            Long size = jedis.zcard("recent:");
+            if (size < limit) {
+                Thread.sleep(1);
+                continue;
+            }
+            int endIndex = (int) Math.min(size - limit, 100);
+            Set<String> sessions = jedis.zrange("recent:", 0, endIndex - 1);
+            List<String> sessionKeys = new ArrayList<>(sessions.size());
+            sessions.forEach(session -> {
+                sessionKeys.add("viewed:" + session);
+                sessionKeys.add("cart:" + session);
+            });
+            jedis.del(sessionKeys.toArray(new String[sessionKeys.size()]));
+            jedis.hdel("login:", sessions.toArray(new String[sessions.size()]));
+            jedis.zrem("recent:", sessions.toArray(new String[sessions.size()]));
+        }
+    }
+
+
+    public void cacheRows() throws InterruptedException {
+        while (!quite) {
+            Set<Tuple> tuples = jedis.zrangeWithScores("schedule:", 0, 0);
+            long timeMillis = System.currentTimeMillis();
+            if (tuples == null || tuples.isEmpty() || tuples.iterator().next().getScore() > timeMillis) {
+                Thread.sleep(50);
+                continue;
+            }
+            String rowId = tuples.iterator().next().getElement();
+
+        }
+    }
 }
