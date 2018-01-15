@@ -1,6 +1,7 @@
 package com.mogoroom.redis;
 
 import org.junit.Before;
+import org.junit.Test;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Tuple;
@@ -13,12 +14,13 @@ import java.util.Set;
  * @author 行一 at 2018/1/4 9:54
  */
 public class Chapter02 {
-    private static HostAndPort hnp = new HostAndPort("192.168.159.128", 6379);
+    private static HostAndPort hnp = new HostAndPort("120.24.161.55", 6379);
     private static Jedis jedis;
 
     @Before
     public void init() {
         jedis = new Jedis(hnp.getHost(), hnp.getPort(), 2000);
+        jedis.auth("xk3o82ld");
     }
 
     public String checkToken(String token) {
@@ -95,5 +97,27 @@ public class Chapter02 {
             String rowId = tuples.iterator().next().getElement();
 
         }
+    }
+
+    @Test
+    public void testString() {
+        jedis.setbit("another-key", 2, true);
+        String s = jedis.get("another-key");
+        System.out.println(s);
+        jedis.setbit("another-key", 7, true);
+        s = jedis.get("another-key");
+        System.out.println(s);
+    }
+
+
+    @Test
+    public void getLeftRegisterTime() {
+        int leftRegisterMinutes = 3*24*60 + 23*60 +58;
+        int days = (int) (leftRegisterMinutes / 1440);
+        int left = (int) (leftRegisterMinutes % 1440);
+        int hours = left / 60;
+        left = left % 60;
+        String s= days + "天" + hours + "小时" + left + "分钟";
+        System.out.println(s);
     }
 }
